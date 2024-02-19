@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 import PyPDF2 as pdf  # 1.26.0
 import operator
 import os
@@ -41,34 +42,36 @@ def is_pdf_valid(pdf_obj):
             return True
     return False
 
-
 lower = operator.methodcaller('lower')
 extractor = operator.methodcaller('extractText')
 
-filepath = input('Enter the path of the .pdf file: ')
-operation_type = int(input('Enter operation type (1=encrypt, 2=decrypt): '))
-source = input('Enter the phrase you want to process (or a path to read): ')
-if os.path.exists(source):
-    with open(source) as handler:
-        source = handler.read()
+_description = "This program encrypts your intended text by a book."
 
-if operation_type == 1:
-    function = encrypt
-elif operation_type == 2:
-    function = decrypt
-else:
-    print('The entered operation is not valid!')
-    exit()
+if __name__ == "__main__":
+    parser = ArgumentParser(prog='BCipher', description=_description)
+    parser.add_argument('source', help='desired pdf book')
+    parser.add_argument('data', help='either a text between " or path of a text file')
+    parser.add_argument('-e', '--encrypt', action='store_true', help='do encryption')
+    parser.add_argument('-d', '--decrypt', action='store_true', help='do decryption')
+    parser.add_argument('-o', '--output', help='export the result in this path')
 
-book = pdf.PdfFileReader(filepath)
-if is_pdf_valid(book):
-    content = list(map(extractor, book.pages))
-    result = function(source, content)
-    print("Result:", result)
+    args = parser.parse_args()
+    if os.path.exists(args.data):
+        with open(args.data) as handler:
+            args.data = handler.read()
 
-    if path := input('If you want to save the result externally, enter the path, else just press <enter>: '):
-        with open(path, 'w') as handler:
-            handler.write(result)
+    book = pdf.PdfFileReader(args.source)
+    if is_pdf_valid(book):
+        content = list(map(extractor, book.pages))
+        if args.decrypt:
+            result = decrypt(args.data, content)
+        else:
+            result = encrypt(args.data, content)
+        print("Result:", result)
 
-else:
-    print('Oops, the program could not detect any text in the loaded pdf')
+        if args.output:
+            with open(args.output, 'w') as handler:
+                handler.write(result)
+
+    else:
+        print('Oops, the program could not detect any text in the loaded pdf')
