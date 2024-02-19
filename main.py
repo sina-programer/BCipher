@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 import PyPDF2 as pdf  # 1.26.0
 import operator
+import time
 import os
 
 def encrypt_word(word, contents: list[str]):
@@ -42,13 +43,27 @@ def is_pdf_valid(pdf_obj):
             return True
     return False
 
+def print_figlet():
+    for line in FIGLET.splitlines():
+        print(line)
+        time.sleep(.2)
+
 lower = operator.methodcaller('lower')
 extractor = operator.methodcaller('extractText')
 
-_description = "This program encrypts your intended text by a book."
+DESCRIPTION = "This program encrypts your intended text by a book."
+FIGLET = '''\n
+   _____ _               ____
+  / ____(_)             |  __|
+ | (___  _ _ __   __ _  | |__ 
+  \___ \| | '_ \ / _` | |  __|
+  ____) | | | | | (_| |_| |  
+ |_____/|_|_| |_|\__,_(_)_| 
+\n\n'''
+
 
 if __name__ == "__main__":
-    parser = ArgumentParser(prog='BCipher', description=_description)
+    parser = ArgumentParser(prog='BCipher', description=DESCRIPTION)
     parser.add_argument('source', help='desired pdf book')
     parser.add_argument('data', help='either a text between " or path of a text file')
     parser.add_argument('-e', '--encrypt', action='store_true', help='do encrypt operation')
@@ -83,3 +98,5 @@ if __name__ == "__main__":
 
     else:
         print('Oops, the program could not detect any text in the loaded pdf')
+
+    print_figlet()
