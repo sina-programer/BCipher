@@ -14,10 +14,17 @@ def encrypt_word(word, contents: list[str]):
     return '#'
 
 def encrypt(text, contents: list[str], delimiter=','):
-    result = ''
-    for sentence in text.splitlines():
-        result +=  delimiter.join(map(lambda word: encrypt_word(word, contents), sentence.split())) + '\n'
-    return result.strip('\n')
+    return '\n'.join(
+        [
+            delimiter.join(
+                map(
+                    lambda word: encrypt_word(word, contents), 
+                    line
+                )
+            )
+            for line in splitter(text)
+        ]
+    )
 
 def decrypt_code(code, contents: list[str]):
     page_idx, line_idx, word_idx = list(map(int, code.split('-')))
@@ -26,11 +33,11 @@ def decrypt_code(code, contents: list[str]):
     words = lines[line_idx].split()
     return words[word_idx]
 
-def decrypt(phrase, content: list[str], delimiter=','):
+def decrypt(phrase, contents: list[str], delimiter=','):
     words = []
     for code in phrase.split(delimiter):
         if is_valid_code(code):
-            words.append(decrypt_code(code, content))
+            words.append(decrypt_code(code, contents))
         else:
             words.append('#')
     return ' '.join(words)
@@ -50,6 +57,12 @@ def is_valid_code(phrase):
         if not part.isnumeric():
             return False
     return True
+
+def splitter(text):
+    result = []
+    for line in text.splitlines():
+        result.append(line.split())
+    return result
 
 def print_figlet():
     for line in FIGLET.splitlines():
