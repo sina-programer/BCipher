@@ -100,4 +100,3 @@ if __name__ == "__main__":
         print('Oops, the program could not detect any text in the loaded pdf')
 
     print_figlet()
-    input('Press <enter> to exit...')
