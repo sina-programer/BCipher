@@ -1,16 +1,13 @@
 from argparse import ArgumentParser
+from functools import partial
 import PyPDF2 as pdf  # 1.26.0
 import operator
 import time
 import os
 
 def encrypt_word(word, contents: list[str]):
-    for page_idx, page_text in enumerate(contents):
-        if word in page_text:
-            for line_idx, line in enumerate(page_text.splitlines()):
-                words = line.split()
-                if word in words:
-                    return f"{page_idx}-{line_idx}-{words.index(word)}"
+    if coords := check_word(word, contents):
+        return '-'.join(coords)
     return '#'
 
 def encrypt(text, contents: list[str], delimiter=','):
@@ -18,7 +15,7 @@ def encrypt(text, contents: list[str], delimiter=','):
         [
             delimiter.join(
                 map(
-                    lambda word: encrypt_word(word, contents), 
+                    partial(encrypt_word, contents=contents),
                     line
                 )
             )
@@ -41,6 +38,26 @@ def decrypt(phrase, contents: list[str], delimiter=','):
         else:
             words.append('#')
     return ' '.join(words)
+
+def check_word(word, contents):
+    for page_idx, page_text in enumerate(contents):
+        if word in page_text:
+            for line_idx, line in enumerate(page_text.splitlines()):
+                words = line.split()
+                if word in words:
+                    return page_idx, line_idx, words.index(word)
+
+def check(clause, contents):
+    result = []
+    for line in splitter(clause):
+        _result = []
+        for word in line:
+            if check_word(word, contents):
+                _result.append(word)
+            else:
+                _result.append('#')
+        result.append(' '.join(_result))
+    return '\n'.join(result)
 
 def is_pdf_valid(pdf_obj):
     """ Has the program detected any text in pdf or not """
@@ -87,6 +104,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(prog='BCipher', description=DESCRIPTION)
     parser.add_argument('source', help='desired pdf book')
     parser.add_argument('data', help='either a text between " or path of a text file')
+    parser.add_argument('-c', '--check', action='store_true', help='do checking operation | check the presence of <data> values & put # for unaccessables')
     parser.add_argument('-e', '--encrypt', action='store_true', help='do encrypt operation | convert each word into a 3-part encoded clause')
     parser.add_argument('-d', '--decrypt', action='store_true', help='do decrypt operation | retrieve each encoded clause into a word')
     parser.add_argument('-o', '--output', help='export the result in this path')
@@ -112,7 +130,9 @@ if __name__ == "__main__":
         if args.lower_data:
             args.data = args.data.lower()
 
-        if args.decrypt:
+        if args.check:
+            result = check(args.data, content)
+        elif args.decrypt:
             result = decrypt(args.data, content, delimiter=args.delimiter)
         elif args.encrypt:
             result = encrypt(args.data, content, delimiter=args.delimiter)
