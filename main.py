@@ -14,10 +14,10 @@ def encrypt_word(word, contents: list[str]):
                     return f"{page_idx}-{line_idx}-{words.index(word)}"
     return '#'
 
-def encrypt(text, contents: list[str]):
+def encrypt(text, contents: list[str], delimiter=','):
     result = ''
     for sentence in text.split('\n'):
-        result +=  '|'.join(map(lambda word: encrypt_word(word, contents), sentence.split())) + '\n'
+        result +=  delimiter.join(map(lambda word: encrypt_word(word, contents), sentence.split())) + '\n'
     return result.strip('\n')
 
 def decrypt_code(code, contents: list[str]):
@@ -27,9 +27,9 @@ def decrypt_code(code, contents: list[str]):
     words = lines[line_idx].split()
     return words[word_idx]
 
-def decrypt(phrase, content: list[str]):
+def decrypt(phrase, content: list[str], delimiter=','):
     words = []
-    for code in phrase.split('|'):
+    for code in phrase.split(delimiter):
         if code == '#':
             words.append(code)
         else:
@@ -69,6 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('-e', '--encrypt', action='store_true', help='do encrypt operation')
     parser.add_argument('-d', '--decrypt', action='store_true', help='do decrypt operation')
     parser.add_argument('-o', '--output', help='export the result in this path')
+    parser.add_argument('--delimiter', default='|', help='the separator between encoded phrase')
 
     args = parser.parse_args()
     if os.path.exists(args.data):
@@ -83,12 +84,12 @@ if __name__ == "__main__":
     if is_pdf_valid(book):
         content = list(map(extractor, book.pages))
         if args.decrypt:
-            result = decrypt(args.data, content)
+            result = decrypt(args.data, content, delimiter=args.delimiter)
         elif args.encrypt:
-            result = encrypt(args.data, content)
+            result = encrypt(args.data, content, delimiter=args.delimiter)
         else:
             print("you didn't set the operation, encryption is running by default")
-            result = encrypt(args.data, content)
+            result = encrypt(args.data, content, delimiter=args.delimiter)
         print("Result:", result)
 
         if args.output:
