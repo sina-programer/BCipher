@@ -5,10 +5,9 @@ import time
 import os
 
 def encrypt_word(word, contents: list[str]):
-    word = word.lower()
-    for page_idx, page_text in enumerate(map(lower, contents)):
+    for page_idx, page_text in enumerate(contents):
         if word in page_text:
-            for line_idx, line in enumerate(page_text.split('\n')):
+            for line_idx, line in enumerate(page_text.splitlines()):
                 words = line.split()
                 if word in words:
                     return f"{page_idx}-{line_idx}-{words.index(word)}"
@@ -16,13 +15,13 @@ def encrypt_word(word, contents: list[str]):
 
 def encrypt(text, contents: list[str], delimiter=','):
     result = ''
-    for sentence in text.split('\n'):
+    for sentence in text.splitlines():
         result +=  delimiter.join(map(lambda word: encrypt_word(word, contents), sentence.split())) + '\n'
     return result.strip('\n')
 
 def decrypt_code(code, contents: list[str]):
     page_idx, line_idx, word_idx = list(map(int, code.split('-')))
-    page_text = contents[page_idx].lower()
+    page_text = contents[page_idx]
     lines = page_text.split('\n')
     words = lines[line_idx].split()
     return words[word_idx]
@@ -79,6 +78,8 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--decrypt', action='store_true', help='do decrypt operation')
     parser.add_argument('-o', '--output', help='export the result in this path')
     parser.add_argument('--delimiter', default='|', help='the separator between encoded phrase')
+    parser.add_argument('-ls', '--lower-source', action='store_true', help='lower the content of <source>')
+    parser.add_argument('-ld', '--lower-data', action='store_true', help='lower the content of <data>')
 
     args = parser.parse_args()
     if os.path.exists(args.data):
@@ -92,6 +93,12 @@ if __name__ == "__main__":
     book = pdf.PdfFileReader(args.source)
     if is_pdf_valid(book):
         content = list(map(extractor, book.pages))
+
+        if args.lower_source:
+            content = list(map(lower, content))
+        if args.lower_data:
+            args.data = args.data.lower()
+
         if args.decrypt:
             result = decrypt(args.data, content, delimiter=args.delimiter)
         elif args.encrypt:
