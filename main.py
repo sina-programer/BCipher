@@ -30,10 +30,10 @@ def decrypt_code(code, contents: list[str]):
 def decrypt(phrase, content: list[str], delimiter=','):
     words = []
     for code in phrase.split(delimiter):
-        if code == '#':
-            words.append(code)
-        else:
+        if is_valid_code(code):
             words.append(decrypt_code(code, content))
+        else:
+            words.append('#')
     return ' '.join(words)
 
 def is_pdf_valid(pdf_obj):
@@ -42,6 +42,15 @@ def is_pdf_valid(pdf_obj):
         if page_text.strip():
             return True
     return False
+
+def is_valid_code(phrase):
+    parts = phrase.split('-')
+    if len(parts) != 3:
+        return False
+    for part in parts:
+        if not part.isnumeric():
+            return False
+    return True
 
 def print_figlet():
     for line in FIGLET.splitlines():
