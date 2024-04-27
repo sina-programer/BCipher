@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from functools import partial
-import PyPDF2 as pdf  # 1.26.0
+import PyPDF2 as pdf  # 3.0.1
 import operator
 import time
 import os
@@ -88,7 +88,7 @@ def print_figlet():
         time.sleep(.2)
 
 lower = operator.methodcaller('lower')
-extractor = operator.methodcaller('extractText')
+extractor = operator.methodcaller('extract_text')
 
 DESCRIPTION = "This program encrypts your intended text by a book."
 FIGLET = '''\n
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     if not os.path.exists(args.source):
         parser.error(f"the entered source is not valid: <{args.source}>")
 
-    book = pdf.PdfFileReader(args.source)
+    book = pdf.PdfReader(args.source)
     if is_pdf_valid(book):
         content = list(map(extractor, book.pages))
 
