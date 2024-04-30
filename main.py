@@ -5,8 +5,17 @@ import operator
 import time
 import os
 
+
+def _encrypt_word(word, contents):
+    for page_idx, page_text in enumerate(contents):
+        if word in page_text:
+            for line_idx, line in enumerate(page_text.splitlines()):
+                words = line.split()
+                if word in words:
+                    return page_idx, line_idx, words.index(word)
+
 def encrypt_word(word, contents: list[str]):
-    if coords := fetch_word_pos(word, contents):
+    if coords := _encrypt_word(word, contents):
         return '-'.join(map(str, coords))
     return '#'
 
@@ -24,29 +33,28 @@ def encrypt(text, contents: list[str], delimiter=','):
         ]
     )
 
+
+def is_code_valid(code, seperator='-'):
+    parts = code.split(seperator)
+    if len(parts) != 3:
+        return False
+    for part in parts:
+        if not part.isnumeric():
+            return False
+    return True
+
 def decrypt_code(code, contents: list[str]):
+    if not is_code_valid(code):
+        return '#'
     page_idx, line_idx, word_idx = list(map(int, code.split('-')))
     page_text = contents[page_idx]
-    lines = page_text.split('\n')
+    lines = page_text.splitlines()
     words = lines[line_idx].split()
     return words[word_idx]
 
-def decrypt(phrase, contents: list[str], delimiter=','):
-    words = []
-    for code in phrase.split(delimiter):
-        if is_valid_code(code):
-            words.append(decrypt_code(code, contents))
-        else:
-            words.append('#')
-    return ' '.join(words)
-
-def fetch_word_pos(word, contents):
-    for page_idx, page_text in enumerate(contents):
-        if word in page_text:
-            for line_idx, line in enumerate(page_text.splitlines()):
-                words = line.split()
-                if word in words:
-                    return page_idx, line_idx, words.index(word)
+def decrypt(phrase, contents: list[str], delimiter='.'):
+    decrypter = partial(decrypt_code, contents=contents)
+    return ' '.join(map(decrypter, phrase.split(delimiter)))
 
 def check(clause, contents):
     result = []
@@ -62,19 +70,10 @@ def check(clause, contents):
 
 def is_pdf_valid(pdf_obj):
     """ Has the program detected any text in pdf or not """
-    for page_text in map(extractor, pdf_obj.pages):
+    for page_text in map(textractor, pdf_obj.pages):
         if page_text.strip():
             return True
     return False
-
-def is_valid_code(phrase):
-    parts = phrase.split('-')
-    if len(parts) != 3:
-        return False
-    for part in parts:
-        if not part.isnumeric():
-            return False
-    return True
 
 def splitter(text):
     result = []
@@ -88,7 +87,7 @@ def print_figlet():
         time.sleep(.2)
 
 lower = operator.methodcaller('lower')
-extractor = operator.methodcaller('extract_text')
+textractor = operator.methodcaller('extract_text')
 
 DESCRIPTION = "This program encrypts your intended text by a book."
 FIGLET = '''\n
@@ -114,17 +113,17 @@ if __name__ == "__main__":
     parser.add_argument('-ld', '--lower-data', action='store_true', help='lower the content of <data>')
 
     args = parser.parse_args()
+    if not os.path.exists(args.source):
+        parser.error(f"the entered source is not valid: <{args.source}>")
+
     if os.path.exists(args.data):
         print(f"loading the file you entered as data: <{args.data}>")
         with open(args.data) as handler:
             args.data = handler.read()
 
-    if not os.path.exists(args.source):
-        parser.error(f"the entered source is not valid: <{args.source}>")
-
     book = pdf.PdfReader(args.source)
     if is_pdf_valid(book):
-        content = list(map(extractor, book.pages))
+        content = list(map(textractor, book.pages))
 
         if args.lower_source:
             content = list(map(lower, content))
@@ -133,7 +132,7 @@ if __name__ == "__main__":
 
         if args.check:
             result = check(args.data, content)
-        elif args.decrypt:
+        if args.decrypt:
             result = decrypt(args.data, content, delimiter=args.delimiter)
         elif args.encrypt:
             result = encrypt(args.data, content, delimiter=args.delimiter)
