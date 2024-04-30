@@ -53,8 +53,15 @@ def decrypt_code(code, contents: list[str]):
     return words[word_idx]
 
 def decrypt(phrase, contents: list[str], delimiter='.'):
-    decrypter = partial(decrypt_code, contents=contents)
-    return ' '.join(map(decrypter, phrase.split(delimiter)))
+    return ' '.join(
+        map(
+            partial(
+                decrypt_code,
+                contents=contents
+            ),
+            phrase.split(delimiter)
+        )
+    )
 
 
 def is_pdf_valid(pdf_obj):
@@ -86,7 +93,9 @@ FIGLET = '''\n
   \___ \| | '_ \ / _` | |  __|
   ____) | | | | | (_| |_| |  
  |_____/|_|_| |_|\__,_(_)_| 
-\n\n'''
+\n
+The project url (open-source): https://github.com/sina-programer/BCipher
+\n'''
 
 
 if __name__ == "__main__":
